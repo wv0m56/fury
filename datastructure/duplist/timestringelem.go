@@ -20,7 +20,7 @@ func (el *TimeStringElement) Next() *TimeStringElement {
 	return el.nexts[0]
 }
 
-func newDupElem(key time.Time, val string, maxHeight int) *TimeStringElement {
+func newTimeStringElement(key time.Time, val string, maxHeight int) *TimeStringElement {
 	lvl := 1 + addHeight(maxHeight)
 	return &TimeStringElement{key, val, make([]*TimeStringElement, lvl)}
 }
