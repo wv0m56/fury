@@ -4,28 +4,28 @@ import (
 	"time"
 )
 
-// TimeStringDuplist is a modified skiplist implementation allowing duplicate
+// TimeString is a modified skiplist implementation allowing duplicate
 // time keys to exist inside the same list. Elements with duplicate keys are
-// adjacent inside TimeStringDuplist, with a later insert placed left of earlier
+// adjacent inside TimeString, with a later insert placed left of earlier
 // ones.
 // Elements with different keys are sorted in ascending order as usual.
-// TimeStringDuplist is required for implementing TTL.
-// TimeStringDuplist does not allow random get or delete by specifying a key and
+// TimeString is required for implementing TTL.
+// TimeString does not allow random get or delete by specifying a key and
 // instead only allows get or delete on the first element of the list, or delete
 // by specifying an element pointer.
-type TimeStringDuplist struct {
-	front     []*TimeStringDuplistElement
+type TimeString struct {
+	front     []*TimeStringElement
 	maxHeight int
 }
 
-func NewTimeStringDuplist(maxHeight int) *TimeStringDuplist {
-	d := &TimeStringDuplist{}
+func NewTimeString(maxHeight int) *TimeString {
+	d := &TimeString{}
 	d.Init(maxHeight)
 	return d
 }
 
-func (d *TimeStringDuplist) Init(maxHeight int) {
-	d.front = make([]*TimeStringDuplistElement, maxHeight)
+func (d *TimeString) Init(maxHeight int) {
+	d.front = make([]*TimeStringElement, maxHeight)
 	if !(maxHeight < 2 || maxHeight >= 64) {
 		d.maxHeight = maxHeight
 	} else {
@@ -33,11 +33,11 @@ func (d *TimeStringDuplist) Init(maxHeight int) {
 	}
 }
 
-func (d *TimeStringDuplist) First() *TimeStringDuplistElement {
+func (d *TimeString) First() *TimeStringElement {
 	return d.front[0]
 }
 
-func (d *TimeStringDuplist) DelElement(el *TimeStringDuplistElement) {
+func (d *TimeString) DelElement(el *TimeStringElement) {
 	if el == nil {
 		return
 	}
@@ -47,12 +47,12 @@ func (d *TimeStringDuplist) DelElement(el *TimeStringDuplistElement) {
 	}
 }
 
-func (d *TimeStringDuplist) iterSearch(el *TimeStringDuplistElement) (
-	left []*TimeStringDuplistElement,
-	iter *TimeStringDuplistElement,
+func (d *TimeString) iterSearch(el *TimeStringElement) (
+	left []*TimeStringElement,
+	iter *TimeStringElement,
 ) {
 
-	left = make([]*TimeStringDuplistElement, d.maxHeight)
+	left = make([]*TimeStringElement, d.maxHeight)
 
 	for h := d.maxHeight - 1; h >= 0; h-- {
 
@@ -76,13 +76,13 @@ func (d *TimeStringDuplist) iterSearch(el *TimeStringDuplistElement) (
 	return
 }
 
-func (d *TimeStringDuplist) del(left []*TimeStringDuplistElement, el *TimeStringDuplistElement) {
+func (d *TimeString) del(left []*TimeStringElement, el *TimeStringElement) {
 	for i := 0; i < len(el.nexts); i++ {
 		d.reassignLeftAtIndex(i, left, el.nexts[i])
 	}
 }
 
-func (d *TimeStringDuplist) Insert(key time.Time, val string) *TimeStringDuplistElement {
+func (d *TimeString) Insert(key time.Time, val string) *TimeStringElement {
 
 	el := newDupElem(key, val, d.maxHeight)
 
@@ -97,13 +97,13 @@ func (d *TimeStringDuplist) Insert(key time.Time, val string) *TimeStringDuplist
 	return el
 }
 
-func (d *TimeStringDuplist) searchAndInsert(el *TimeStringDuplistElement) {
+func (d *TimeString) searchAndInsert(el *TimeStringElement) {
 	left, iter := d.search(el.key)
 	d.insert(left, el, iter)
 }
 
-func (d *TimeStringDuplist) search(key time.Time) (left []*TimeStringDuplistElement, iter *TimeStringDuplistElement) {
-	left = make([]*TimeStringDuplistElement, d.maxHeight)
+func (d *TimeString) search(key time.Time) (left []*TimeStringElement, iter *TimeStringElement) {
+	left = make([]*TimeStringElement, d.maxHeight)
 
 	for h := d.maxHeight - 1; h >= 0; h-- {
 
@@ -127,7 +127,7 @@ func (d *TimeStringDuplist) search(key time.Time) (left []*TimeStringDuplistElem
 	return
 }
 
-func (d *TimeStringDuplist) insert(left []*TimeStringDuplistElement, el, right *TimeStringDuplistElement) {
+func (d *TimeString) insert(left []*TimeStringElement, el, right *TimeStringElement) {
 	for i := 0; i < len(el.nexts); i++ {
 		if right != nil && i < len(right.nexts) {
 
@@ -142,7 +142,7 @@ func (d *TimeStringDuplist) insert(left []*TimeStringDuplistElement, el, right *
 	}
 }
 
-func (d *TimeStringDuplist) takeNextsFromLeftAtIndex(i int, left []*TimeStringDuplistElement, el *TimeStringDuplistElement) {
+func (d *TimeString) takeNextsFromLeftAtIndex(i int, left []*TimeStringElement, el *TimeStringElement) {
 	if left[i] != nil {
 		el.nexts[i] = left[i].nexts[i]
 	} else {
@@ -150,7 +150,7 @@ func (d *TimeStringDuplist) takeNextsFromLeftAtIndex(i int, left []*TimeStringDu
 	}
 }
 
-func (d *TimeStringDuplist) reassignLeftAtIndex(i int, left []*TimeStringDuplistElement, el *TimeStringDuplistElement) {
+func (d *TimeString) reassignLeftAtIndex(i int, left []*TimeStringElement, el *TimeStringElement) {
 	if left[i] == nil {
 		d.front[i] = el
 	} else {
@@ -158,7 +158,7 @@ func (d *TimeStringDuplist) reassignLeftAtIndex(i int, left []*TimeStringDuplist
 	}
 }
 
-func (d *TimeStringDuplist) DelFirst() {
+func (d *TimeString) DelFirst() {
 
 	for i := 0; i < d.maxHeight; i++ {
 		if d.front[i] == nil || d.front[i] != d.front[0] {

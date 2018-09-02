@@ -2,27 +2,27 @@ package duplist
 
 import "time"
 
-type TimeStringDuplistElement struct {
+type TimeStringElement struct {
 	key   time.Time
 	val   string
-	nexts []*TimeStringDuplistElement
+	nexts []*TimeStringElement
 }
 
-func (el *TimeStringDuplistElement) Key() time.Time {
+func (el *TimeStringElement) Key() time.Time {
 	return el.key
 }
 
-func (el *TimeStringDuplistElement) Val() string {
+func (el *TimeStringElement) Val() string {
 	return el.val
 }
 
-func (el *TimeStringDuplistElement) Next() *TimeStringDuplistElement {
+func (el *TimeStringElement) Next() *TimeStringElement {
 	return el.nexts[0]
 }
 
-func newDupElem(key time.Time, val string, maxHeight int) *TimeStringDuplistElement {
+func newDupElem(key time.Time, val string, maxHeight int) *TimeStringElement {
 	lvl := 1 + addHeight(maxHeight)
-	return &TimeStringDuplistElement{key, val, make([]*TimeStringDuplistElement, lvl)}
+	return &TimeStringElement{key, val, make([]*TimeStringElement, lvl)}
 }
 
 func addHeight(maxHeight int) int {

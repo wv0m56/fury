@@ -9,7 +9,7 @@ import (
 
 func TestDuplist(t *testing.T) {
 
-	d := NewTimeStringDuplist(24)
+	d := NewTimeString(24)
 	assert.Nil(t, d.First())
 
 	now := time.Now()
@@ -70,7 +70,7 @@ func TestDuplist(t *testing.T) {
 func BenchmarkDuplistInsert(b *testing.B) {
 
 	N := 1000 * 10
-	dup := NewTimeStringDuplist(22)
+	dup := NewTimeString(22)
 	for i := 0; i < N; i++ {
 		dup.Insert(time.Now(), time.Now().String())
 	}
