@@ -136,6 +136,7 @@ func (e *Engine) cacheFill(key string) (*bytes.Reader, error) {
 
 	e.rwm.Lock()
 	if b, ok := e.data[key]; ok {
+		e.rwm.Unlock()
 		return bytes.NewReader(b), nil
 	}
 
@@ -144,12 +145,6 @@ func (e *Engine) cacheFill(key string) (*bytes.Reader, error) {
 
 		cond.count++
 		return e.blockUntilFilled(key)
-
-	} else if ok && cond == nil {
-
-		// must never reach here
-		e.rwm.Unlock()
-		return nil, errors.New("nil condition during cache fill")
 
 	} else {
 
@@ -184,9 +179,9 @@ func (e *Engine) firstFill(key string) {
 
 		e.rwm.Lock()
 
-		if rowPayloadSize := rw.b.Len(); e.payloadTotal+int64(rowPayloadSize) > e.maxPayloadTotal {
-			e.evictUntilFree(2 * rowPayloadSize)
-		}
+		// if rowPayloadSize := rw.b.Len(); e.payloadTotal+int64(rowPayloadSize) > e.maxPayloadTotal {
+		// 	e.evictUntilFree(2 * rowPayloadSize)
+		// }
 
 		if exp != nil && exp.After(time.Now()) {
 			rw.Commit()
@@ -195,6 +190,7 @@ func (e *Engine) firstFill(key string) {
 			rw.Commit()
 		}
 
+		e.payloadTotal += int64(rw.b.Len())
 		e.fillCond[key].b = rw.b.Bytes()
 	}
 

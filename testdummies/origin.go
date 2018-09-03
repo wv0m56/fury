@@ -1,4 +1,4 @@
-// Package fake is a fake implementation of the Origin interface for tests.
+// Package testdummies contains implementations of the Origin interface for tests.
 package testdummies
 
 import (
@@ -10,7 +10,6 @@ import (
 	"time"
 )
 
-// For tests. It implements the Origin interface.
 type DelayedOrigin struct{}
 
 // Fetch fetches dummy data. "error" as key simulates a network error should

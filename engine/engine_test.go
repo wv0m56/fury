@@ -125,7 +125,7 @@ func BenchmarkHotKey(b *testing.B) {
 		wg.Add(N)
 		for j := 0; j < N; j++ {
 			go func() {
-				e.Get("hot key 2")
+				e.Get("hot key")
 				wg.Done()
 			}()
 		}
