@@ -1,8 +1,8 @@
 package duplist
 
 // Uint64String is repetition....cuz generics.
-// Uint64String is required by Stats implementation to pool keys which are
-// no longer relevant.
+// Uint64String is required by access stats implementation to pool keys which
+// are no longer relevant.
 type Uint64String struct {
 	front     []*Uint64StringElement
 	maxHeight int

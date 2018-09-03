@@ -11,7 +11,7 @@ func TestTimeStringLinkedList(t *testing.T) {
 	ll := &TimeString{}
 	ll.delFront()
 
-	ll.addToBack("one")
+	ll.AddToBack("one")
 	assert.NotNil(t, ll.front)
 	assert.NotNil(t, ll.back)
 	assert.Equal(t, ll.front, ll.back)
@@ -20,44 +20,44 @@ func TestTimeStringLinkedList(t *testing.T) {
 	assert.Nil(t, ll.front)
 	assert.Nil(t, ll.back)
 
-	ptr1 := ll.addToBack("one")
-	ll.addToBack("two")
-	ptr2 := ll.addToBack("3")
-	ll.addToBack("4")
-	assert.Equal(t, "one", ll.front.val)
-	assert.Equal(t, "4", ll.back.val)
+	ptr1 := ll.AddToBack("one")
+	ll.AddToBack("two")
+	ptr2 := ll.AddToBack("3")
+	ll.AddToBack("4")
+	assert.Equal(t, "one", ll.front.key)
+	assert.Equal(t, "4", ll.back.key)
 
-	var vals string
+	var keys string
 	for it := ll.front; it != nil; it = it.next {
-		vals += it.val
+		keys += it.key
 	}
-	assert.Equal(t, "onetwo34", vals)
+	assert.Equal(t, "onetwo34", keys)
 
-	ll.delByPtr(ptr2)
-	vals = ""
+	ll.Del(ptr2)
+	keys = ""
 	for it := ll.front; it != nil; it = it.next {
-		vals += it.val
+		keys += it.key
 	}
-	assert.Equal(t, "onetwo4", vals)
+	assert.Equal(t, "onetwo4", keys)
 
-	ll.delByPtr(ptr1)
-	vals = ""
+	ll.Del(ptr1)
+	keys = ""
 	for it := ll.front; it != nil; it = it.next {
-		vals += it.val
+		keys += it.key
 	}
-	assert.Equal(t, "two4", vals)
+	assert.Equal(t, "two4", keys)
 
-	ptr3 := ll.addToBack("back")
-	vals = ""
+	ptr3 := ll.AddToBack("back")
+	keys = ""
 	for it := ll.front; it != nil; it = it.next {
-		vals += it.val
+		keys += it.key
 	}
-	assert.Equal(t, "two4back", vals)
+	assert.Equal(t, "two4back", keys)
 
-	ll.delByPtr(ptr3)
-	vals = ""
+	ll.Del(ptr3)
+	keys = ""
 	for it := ll.front; it != nil; it = it.next {
-		vals += it.val
+		keys += it.key
 	}
-	assert.Equal(t, "two4", vals)
+	assert.Equal(t, "two4", keys)
 }
