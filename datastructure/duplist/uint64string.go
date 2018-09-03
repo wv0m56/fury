@@ -1,7 +1,7 @@
 package duplist
 
 // Uint64String is repetition....cuz generics.
-// Uint64String is required by EvictPolicy implementation to pool keys which are
+// Uint64String is required by Stats implementation to pool keys which are
 // no longer relevant.
 type Uint64String struct {
 	front     []*Uint64StringElement
