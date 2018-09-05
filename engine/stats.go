@@ -33,12 +33,12 @@ func (as *accessStats) addToWindow(key string) {
 
 	as.cms.Add([]byte(key))
 
-	if ptr, ok := as.relevantMap[key]; ok {
-		as.relevantLL.Del(ptr)
+	if existing, ok := as.relevantMap[key]; ok {
+		as.relevantLL.Del(existing)
 	}
 
-	ptr := as.relevantLL.AddToBack(key)
-	as.relevantMap[key] = ptr
+	addition := as.relevantLL.AddToBack(key)
+	as.relevantMap[key] = addition
 
 	as.delIrrelevant(key)
 }

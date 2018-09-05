@@ -16,8 +16,7 @@ type TimeStringElement struct {
 
 // approximately sorted
 func (ll *TimeString) AddToBack(key string) *TimeStringElement {
-	e := &TimeStringElement{time.Now(), key, nil, nil}
-	e.prev = ll.back
+	e := &TimeStringElement{time.Now(), key, ll.back, nil}
 
 	if ll.back != nil {
 		ll.back.next = e
@@ -31,9 +30,8 @@ func (ll *TimeString) AddToBack(key string) *TimeStringElement {
 }
 
 func (ll *TimeString) delFront() {
-	if ll.front == nil && ll.back == nil {
-		return
-	}
+	// it is a given at this point that the linkedlist is not empty
+
 	if ll.front == ll.back { // 1 element
 		ll.back = nil
 	}
@@ -51,6 +49,8 @@ func (ll *TimeString) Del(ptr *TimeStringElement) {
 	ptr.prev.next = ptr.next
 	if ptr.next != nil {
 		ptr.next.prev = ptr.prev
+	} else {
+		ll.back = ptr.prev
 	}
 }
 

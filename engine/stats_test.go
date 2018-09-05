@@ -64,23 +64,29 @@ func TestAccessStats(t *testing.T) {
 
 	as.addToWindow("a")
 	as.addToWindow("a")
-	as.addToWindow("a")
-	as.addToWindow("a")
 	as.addToWindow("b")
+	as.addToWindow("bar")
+	as.addToWindow("a")
+	as.addToWindow("a")
 
 	as.Lock()
-	assert.Equal(t, 2, len(as.relevantMap))
-	assert.Equal(t, 3, len(as.irrelevantMap))
+	assert.Equal(t, 3, len(as.relevantMap))
+	assert.Equal(t, 2, len(as.irrelevantMap))
+	var relevantKeys string
+	for it := as.relevantLL.Front(); it != nil; it = it.Next() {
+		relevantKeys += it.Key()
+	}
+	assert.Equal(t, "bbara", relevantKeys)
 	as.Unlock()
 
 	as.updateDataDeletion("b")
 	as.updateDataDeletion("baz")
 
 	as.Lock()
-	assert.Equal(t, 1, len(as.relevantMap))
-	assert.Equal(t, 2, len(as.irrelevantMap))
+	assert.Equal(t, 2, len(as.relevantMap))
+	assert.Equal(t, 1, len(as.irrelevantMap))
 	assert.Equal(t, uint64(1), as.cms.Count([]byte("foo")))
-	assert.Equal(t, uint64(1), as.cms.Count([]byte("bar")))
+	assert.Equal(t, uint64(2), as.cms.Count([]byte("bar")))
 	assert.Equal(t, uint64(0), as.cms.Count([]byte("baz")))
 	assert.Equal(t, uint64(0), as.cms.Count([]byte("zzz")))
 	assert.Equal(t, uint64(4), as.cms.Count([]byte("a")))
