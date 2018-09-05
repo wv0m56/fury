@@ -14,11 +14,17 @@ import (
 type accessStats struct {
 	sync.Mutex
 	cms               *boom.CountMinSketch
-	relevantLL        *linkedlist.TimeString
-	relevantMap       map[string]*linkedlist.TimeStringElement
+	relevantLL        *linkedlist.TimeString // relevance train (approx timestamp sorted)
+	relevantDuplist   *duplist.Uint64String
+	relevantMap       map[string]relevantTuple
 	relevanceWindow   time.Duration
 	irrelevantDuplist *duplist.Uint64String
 	irrelevantMap     map[string]*duplist.Uint64StringElement
+}
+
+type relevantTuple struct {
+	dlPtr *duplist.Uint64StringElement
+	llPtr *linkedlist.TimeStringElement
 }
 
 func (as *accessStats) isRelevant(key string) bool {
@@ -34,11 +40,13 @@ func (as *accessStats) addToWindow(key string) {
 	as.cms.Add([]byte(key))
 
 	if existing, ok := as.relevantMap[key]; ok {
-		as.relevantLL.Del(existing)
+		as.relevantDuplist.DelElement(existing.dlPtr)
+		as.relevantLL.Del(existing.llPtr)
 	}
 
-	addition := as.relevantLL.AddToBack(key)
-	as.relevantMap[key] = addition
+	dlAdd := as.relevantDuplist.Insert(as.cms.Count([]byte(key)), key)
+	llAdd := as.relevantLL.AddToBack(key)
+	as.relevantMap[key] = relevantTuple{dlAdd, llAdd}
 
 	as.delIrrelevant(key)
 }
@@ -55,7 +63,8 @@ func (as *accessStats) updateDataDeletion(key string) {
 
 func (as *accessStats) delRelevant(key string) {
 	if ptr, ok := as.relevantMap[key]; ok {
-		as.relevantLL.Del(ptr)
+		as.relevantLL.Del(ptr.llPtr)
+		as.relevantDuplist.DelElement(ptr.dlPtr)
 		delete(as.relevantMap, key)
 	}
 }

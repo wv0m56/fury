@@ -59,7 +59,7 @@ func NewEngine(opts *Options) (*Engine, error) {
 	}
 
 	// log2(ExpectedLen)-1
-	n := int(math.Floor(math.Log2(float64(opts.ExpectedLen/2)))) - 1
+	n := int(math.Floor(math.Log2(float64(opts.ExpectedLen / 2))))
 
 	e := &Engine{
 		&sync.RWMutex{},
@@ -74,9 +74,10 @@ func NewEngine(opts *Options) (*Engine, error) {
 			sync.Mutex{},
 			boom.NewCountMinSketch(0.001, 0.99),
 			&linkedlist.TimeString{},
-			make(map[string]*linkedlist.TimeStringElement),
-			opts.AccessStatsRelevanceWindow,
 			duplist.NewUint64String(n),
+			make(map[string]relevantTuple),
+			opts.AccessStatsRelevanceWindow,
+			duplist.NewUint64String(n - 1),
 			make(map[string]*duplist.Uint64StringElement),
 		},
 		opts.O,
@@ -179,9 +180,9 @@ func (e *Engine) firstFill(key string) {
 
 		e.rwm.Lock()
 
-		// if rowPayloadSize := rw.b.Len(); e.payloadTotal+int64(rowPayloadSize) > e.maxPayloadTotal {
-		// 	e.evictUntilFree(2 * rowPayloadSize)
-		// }
+		if rowPayloadSize := rw.b.Len(); e.payloadTotal+int64(rowPayloadSize) > e.maxPayloadTotal {
+			e.evictUntilFree(2 * rowPayloadSize)
+		}
 
 		if exp != nil && exp.After(time.Now()) {
 			rw.Commit()
@@ -225,6 +226,50 @@ func (e *Engine) blockUntilFilled(key string) (r *bytes.Reader, err error) {
 	return
 }
 
+// still holding top level lock throughout
+func (e *Engine) evictUntilFree(wantedFreeSpace int) {
+	var enoughFreed bool
+	e.stats.Lock()
+	defer e.stats.Unlock()
+
+	for it := e.stats.irrelevantDuplist.First(); it != nil; it = it.Next() {
+
+		key := it.Val()
+		e.delDataTTLStats(key)
+		if freeSpace := e.maxPayloadTotal - e.payloadTotal; freeSpace > int64(wantedFreeSpace) {
+			enoughFreed = true
+			break
+		}
+	}
+
+	if !enoughFreed {
+		// check LRU
+		for it := e.stats.relevantLL.Front(); it != nil; it = it.Next() {
+
+			// TODO:
+			// TODO:
+			// TODO:
+
+			if freeSpace := e.maxPayloadTotal - e.payloadTotal; freeSpace > int64(wantedFreeSpace) {
+				break
+			}
+		}
+	}
+}
+
+func (e *Engine) delData(key string) {
+	if b, ok := e.data[key]; ok {
+		e.payloadTotal -= int64(len(b))
+		delete(e.data, key)
+	}
+}
+
+func (e *Engine) delDataTTLStats(key string) {
+	e.delData(key)
+	e.ttl.delTTLEntry(key)
+	go e.stats.updateDataDeletion(key)
+}
+
 type rowWriter struct {
 	key string
 	b   *bytes.Buffer
@@ -241,9 +286,4 @@ func (rw *rowWriter) Write(p []byte) (n int, err error) {
 // no locking.
 func (rw *rowWriter) Commit() {
 	rw.e.data[rw.key] = rw.b.Bytes()
-}
-
-// still holding top level lock throughout
-func (e *Engine) evictUntilFree(wantedFreeSpace int) {
-	// later
 }

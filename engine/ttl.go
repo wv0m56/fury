@@ -41,6 +41,13 @@ func (tc *ttlControl) startLoop(step time.Duration) {
 	}
 }
 
+func (tc *ttlControl) delTTLEntry(key string) {
+	if el, ok := tc.m[key]; ok {
+		tc.DelElement(el)
+		delete(tc.m, key)
+	}
+}
+
 func (e *Engine) setExpiry(key string, expiry time.Time) {
 
 	if de, ok := e.ttl.m[key]; ok {

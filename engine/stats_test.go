@@ -18,7 +18,8 @@ func TestAccessStats(t *testing.T) {
 		sync.Mutex{},
 		boom.NewCountMinSketch(0.001, 0.99),
 		&linkedlist.TimeString{},
-		map[string]*linkedlist.TimeStringElement{},
+		duplist.NewUint64String(24),
+		map[string]relevantTuple{},
 		10 * time.Millisecond,
 		duplist.NewUint64String(24),
 		map[string]*duplist.Uint64StringElement{},
@@ -36,7 +37,7 @@ func TestAccessStats(t *testing.T) {
 	assert.Equal(t, 3, len(as.relevantMap))
 	assert.Equal(t, 0, len(as.irrelevantMap))
 	for _, v := range as.relevantMap {
-		if !(v.Key() == "foo" || v.Key() == "bar" || v.Key() == "baz") {
+		if key := v.dlPtr.Val(); !(key == "foo" || key == "bar" || key == "baz") {
 			t.Error("map wrong")
 		}
 	}
