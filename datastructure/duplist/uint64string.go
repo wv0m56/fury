@@ -76,7 +76,7 @@ func (us *Uint64String) del(left []*Uint64StringElement, el *Uint64StringElement
 
 func (us *Uint64String) Insert(key uint64, val string) *Uint64StringElement {
 
-	el := newUint64StringElement(key, val, us.maxHeight)
+	el := newUint64StringElement(key, val, us.rh)
 
 	if us.front[0] == nil {
 

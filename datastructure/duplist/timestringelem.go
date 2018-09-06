@@ -20,6 +20,6 @@ func (el *TimeStringElement) Next() *TimeStringElement {
 	return el.nexts[0]
 }
 
-func newTimeStringElement(key time.Time, val string, maxHeight int) *TimeStringElement {
-	return &TimeStringElement{key, val, make([]*TimeStringElement, maxHeight)}
+func newTimeStringElement(key time.Time, val string, rh *randomHeight) *TimeStringElement {
+	return &TimeStringElement{key, val, make([]*TimeStringElement, rh.height())}
 }

@@ -18,6 +18,6 @@ func (el *Uint64StringElement) Next() *Uint64StringElement {
 	return el.nexts[0]
 }
 
-func newUint64StringElement(key uint64, val string, maxHeight int) *Uint64StringElement {
-	return &Uint64StringElement{key, val, make([]*Uint64StringElement, maxHeight)}
+func newUint64StringElement(key uint64, val string, rh *randomHeight) *Uint64StringElement {
+	return &Uint64StringElement{key, val, make([]*Uint64StringElement, rh.height())}
 }

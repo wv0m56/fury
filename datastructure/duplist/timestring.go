@@ -85,7 +85,7 @@ func (ts *TimeString) del(left []*TimeStringElement, el *TimeStringElement) {
 
 func (ts *TimeString) Insert(key time.Time, val string) *TimeStringElement {
 
-	el := newTimeStringElement(key, val, ts.maxHeight)
+	el := newTimeStringElement(key, val, ts.rh)
 
 	if ts.front[0] == nil {
 
