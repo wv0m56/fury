@@ -15,49 +15,50 @@ import (
 // by specifying an element pointer.
 type TimeString struct {
 	front     []*TimeStringElement
+	rh        *randomHeight
 	maxHeight int
 }
 
 func NewTimeString(maxHeight int) *TimeString {
-	d := &TimeString{}
-	d.Init(maxHeight)
-	return d
+	ts := &TimeString{}
+	ts.Init(maxHeight)
+	return ts
 }
 
-func (d *TimeString) Init(maxHeight int) {
-	d.front = make([]*TimeStringElement, maxHeight)
-	if !(maxHeight < 2 || maxHeight >= 64) {
-		d.maxHeight = maxHeight
-	} else {
+func (ts *TimeString) Init(maxHeight int) {
+	ts.maxHeight = maxHeight
+	ts.front = make([]*TimeStringElement, maxHeight)
+	if maxHeight < 2 || maxHeight >= 64 {
 		panic("maxHeight must be between 2 and 64")
 	}
+	ts.rh = newRandomHeight(maxHeight, nil)
 }
 
-func (d *TimeString) First() *TimeStringElement {
-	return d.front[0]
+func (ts *TimeString) First() *TimeStringElement {
+	return ts.front[0]
 }
 
-func (d *TimeString) DelElement(el *TimeStringElement) {
+func (ts *TimeString) DelElement(el *TimeStringElement) {
 	if el == nil {
 		return
 	}
-	left, it := d.iterSearch(el)
+	left, it := ts.iterSearch(el)
 	if it == el {
-		d.del(left, it)
+		ts.del(left, it)
 	}
 }
 
-func (d *TimeString) iterSearch(el *TimeStringElement) (
+func (ts *TimeString) iterSearch(el *TimeStringElement) (
 	left []*TimeStringElement,
 	iter *TimeStringElement,
 ) {
 
-	left = make([]*TimeStringElement, d.maxHeight)
+	left = make([]*TimeStringElement, ts.maxHeight)
 
-	for h := d.maxHeight - 1; h >= 0; h-- {
+	for h := ts.maxHeight - 1; h >= 0; h-- {
 
-		if h == d.maxHeight-1 || left[h+1] == nil {
-			iter = d.front[h]
+		if h == ts.maxHeight-1 || left[h+1] == nil {
+			iter = ts.front[h]
 		} else {
 			left[h] = left[h+1]
 			iter = left[h].nexts[h]
@@ -76,39 +77,39 @@ func (d *TimeString) iterSearch(el *TimeStringElement) (
 	return
 }
 
-func (d *TimeString) del(left []*TimeStringElement, el *TimeStringElement) {
+func (ts *TimeString) del(left []*TimeStringElement, el *TimeStringElement) {
 	for i := 0; i < len(el.nexts); i++ {
-		d.reassignLeftAtIndex(i, left, el.nexts[i])
+		ts.reassignLeftAtIndex(i, left, el.nexts[i])
 	}
 }
 
-func (d *TimeString) Insert(key time.Time, val string) *TimeStringElement {
+func (ts *TimeString) Insert(key time.Time, val string) *TimeStringElement {
 
-	el := newTimeStringElement(key, val, d.maxHeight)
+	el := newTimeStringElement(key, val, ts.maxHeight)
 
-	if d.front[0] == nil {
+	if ts.front[0] == nil {
 
-		d.insert(d.front, el, nil)
+		ts.insert(ts.front, el, nil)
 
 	} else {
 
-		d.searchAndInsert(el)
+		ts.searchAndInsert(el)
 	}
 	return el
 }
 
-func (d *TimeString) searchAndInsert(el *TimeStringElement) {
-	left, iter := d.search(el.key)
-	d.insert(left, el, iter)
+func (ts *TimeString) searchAndInsert(el *TimeStringElement) {
+	left, iter := ts.search(el.key)
+	ts.insert(left, el, iter)
 }
 
-func (d *TimeString) search(key time.Time) (left []*TimeStringElement, iter *TimeStringElement) {
-	left = make([]*TimeStringElement, d.maxHeight)
+func (ts *TimeString) search(key time.Time) (left []*TimeStringElement, iter *TimeStringElement) {
+	left = make([]*TimeStringElement, ts.maxHeight)
 
-	for h := d.maxHeight - 1; h >= 0; h-- {
+	for h := ts.maxHeight - 1; h >= 0; h-- {
 
-		if h == d.maxHeight-1 || left[h+1] == nil {
-			iter = d.front[h]
+		if h == ts.maxHeight-1 || left[h+1] == nil {
+			iter = ts.front[h]
 		} else {
 			left[h] = left[h+1]
 			iter = left[h].nexts[h]
@@ -127,7 +128,7 @@ func (d *TimeString) search(key time.Time) (left []*TimeStringElement, iter *Tim
 	return
 }
 
-func (d *TimeString) insert(left []*TimeStringElement, el, right *TimeStringElement) {
+func (ts *TimeString) insert(left []*TimeStringElement, el, right *TimeStringElement) {
 	for i := 0; i < len(el.nexts); i++ {
 		if right != nil && i < len(right.nexts) {
 
@@ -135,35 +136,35 @@ func (d *TimeString) insert(left []*TimeStringElement, el, right *TimeStringElem
 
 		} else {
 
-			d.takeNextsFromLeftAtIndex(i, left, el)
+			ts.takeNextsFromLeftAtIndex(i, left, el)
 		}
 
-		d.reassignLeftAtIndex(i, left, el)
+		ts.reassignLeftAtIndex(i, left, el)
 	}
 }
 
-func (d *TimeString) takeNextsFromLeftAtIndex(i int, left []*TimeStringElement, el *TimeStringElement) {
+func (ts *TimeString) takeNextsFromLeftAtIndex(i int, left []*TimeStringElement, el *TimeStringElement) {
 	if left[i] != nil {
 		el.nexts[i] = left[i].nexts[i]
 	} else {
-		el.nexts[i] = d.front[i]
+		el.nexts[i] = ts.front[i]
 	}
 }
 
-func (d *TimeString) reassignLeftAtIndex(i int, left []*TimeStringElement, el *TimeStringElement) {
+func (ts *TimeString) reassignLeftAtIndex(i int, left []*TimeStringElement, el *TimeStringElement) {
 	if left[i] == nil {
-		d.front[i] = el
+		ts.front[i] = el
 	} else {
 		left[i].nexts[i] = el
 	}
 }
 
-func (d *TimeString) DelFirst() {
+func (ts *TimeString) DelFirst() {
 
-	for i := 0; i < d.maxHeight; i++ {
-		if d.front[i] == nil || d.front[i] != d.front[0] {
+	for i := 0; i < ts.maxHeight; i++ {
+		if ts.front[i] == nil || ts.front[i] != ts.front[0] {
 			continue
 		}
-		d.front[i] = d.front[i].nexts[i]
+		ts.front[i] = ts.front[i].nexts[i]
 	}
 }

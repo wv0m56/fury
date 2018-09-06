@@ -19,6 +19,5 @@ func (el *Uint64StringElement) Next() *Uint64StringElement {
 }
 
 func newUint64StringElement(key uint64, val string, maxHeight int) *Uint64StringElement {
-	lvl := 1 + addHeight(maxHeight)
-	return &Uint64StringElement{key, val, make([]*Uint64StringElement, lvl)}
+	return &Uint64StringElement{key, val, make([]*Uint64StringElement, maxHeight)}
 }

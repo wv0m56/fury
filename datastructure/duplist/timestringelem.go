@@ -21,16 +21,5 @@ func (el *TimeStringElement) Next() *TimeStringElement {
 }
 
 func newTimeStringElement(key time.Time, val string, maxHeight int) *TimeStringElement {
-	lvl := 1 + addHeight(maxHeight)
-	return &TimeStringElement{key, val, make([]*TimeStringElement, lvl)}
-}
-
-func addHeight(maxHeight int) int {
-	var n int
-	for n = 0; n < maxHeight-1; n++ {
-		if !flipCoin() {
-			break
-		}
-	}
-	return n
+	return &TimeStringElement{key, val, make([]*TimeStringElement, maxHeight)}
 }
