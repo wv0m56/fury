@@ -7,7 +7,7 @@ import (
 )
 
 func TestFlipCoin(t *testing.T) {
-	rh := newRandomHeight(24, nil)
+	rh := newRandomHeightGenerator(24, nil)
 	var heads, tails float32
 	assert.True(t, heads == 0.0)
 	for i := 0; i < 100000; i++ {
@@ -24,7 +24,7 @@ func TestFlipCoin(t *testing.T) {
 
 func BenchmarkFlipCoin(b *testing.B) {
 	// must not take to long to flip a coin
-	rh := newRandomHeight(24, nil)
+	rh := newRandomHeightGenerator(24, nil)
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		rh.flipCoin()

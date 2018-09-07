@@ -27,11 +27,6 @@ type relevantTuple struct {
 	llPtr *linkedlist.TimeStringElement
 }
 
-func (as *accessStats) isRelevant(key string) bool {
-	_, ok := as.relevantMap[key]
-	return ok
-}
-
 // lock because called from goroutine by engine
 func (as *accessStats) addToWindow(key string) {
 	as.Lock()
@@ -39,16 +34,12 @@ func (as *accessStats) addToWindow(key string) {
 
 	as.cms.Add([]byte(key))
 
-	if existing, ok := as.relevantMap[key]; ok {
-		as.relevantDuplist.DelElement(existing.dlPtr)
-		as.relevantLL.Del(existing.llPtr)
-	}
+	as.delRelevant(key)
+	as.delIrrelevant(key)
 
 	dlAdd := as.relevantDuplist.Insert(as.cms.Count([]byte(key)), key)
 	llAdd := as.relevantLL.AddToBack(key)
 	as.relevantMap[key] = relevantTuple{dlAdd, llAdd}
-
-	as.delIrrelevant(key)
 }
 
 // lock because called from goroutine by engine
@@ -62,9 +53,9 @@ func (as *accessStats) updateDataDeletion(key string) {
 }
 
 func (as *accessStats) delRelevant(key string) {
-	if ptr, ok := as.relevantMap[key]; ok {
-		as.relevantLL.Del(ptr.llPtr)
-		as.relevantDuplist.DelElement(ptr.dlPtr)
+	if tup, ok := as.relevantMap[key]; ok {
+		as.relevantLL.Del(tup.llPtr)
+		as.relevantDuplist.DelElement(tup.dlPtr)
 		delete(as.relevantMap, key)
 	}
 }

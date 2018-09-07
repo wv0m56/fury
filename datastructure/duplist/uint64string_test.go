@@ -11,13 +11,14 @@ func TestUint64StringDuplist(t *testing.T) {
 	d := NewUint64String(24)
 	assert.Nil(t, d.First())
 
-	el := d.Insert(500000, "foo")
-	d.Insert(500000, "bar")
-	d.Insert(500000, "baz")
-	d.Insert(700000, "qux")
+	fooEl := d.Insert(500000, "foo")
+	barEl := d.Insert(500000, "bar")
+	bazEl := d.Insert(500000, "baz")
+	quxEl := d.Insert(700000, "qux")
 	d.Insert(300000, "first")
-	assert.NotNil(t, el)
-	assert.Equal(t, "foo", el.Val())
+	lastEl := d.Insert(999999, "last")
+	assert.NotNil(t, fooEl)
+	assert.Equal(t, "foo", fooEl.Val())
 
 	first := d.First()
 	assert.Equal(t, uint64(300000), first.Key())
@@ -27,37 +28,44 @@ func TestUint64StringDuplist(t *testing.T) {
 	for it := d.First(); it != nil; it = it.Next() {
 		vals += it.Val()
 	}
-	assert.Equal(t, "firstbazbarfooqux", vals)
+	assert.Equal(t, "firstbazbarfooquxlast", vals)
 
-	d.DelFirst()
+	d.DelElement(fooEl)
 	vals = ""
 	for it := d.First(); it != nil; it = it.Next() {
 		vals += it.Val()
 	}
-	assert.Equal(t, "bazbarfooqux", vals)
+	assert.Equal(t, "firstbazbarquxlast", vals)
 
-	d.DelElement(el)
+	d.DelElement(bazEl)
 	vals = ""
 	for it := d.First(); it != nil; it = it.Next() {
 		vals += it.Val()
 	}
-	assert.Equal(t, "bazbarqux", vals)
+	assert.Equal(t, "firstbarquxlast", vals)
 
-	d.DelFirst()
+	d.DelElement(quxEl)
 	vals = ""
 	for it := d.First(); it != nil; it = it.Next() {
 		vals += it.Val()
 	}
-	assert.Equal(t, "barqux", vals)
+	assert.Equal(t, "firstbarlast", vals)
 
-	d.DelFirst()
+	d.DelElement(first)
 	vals = ""
 	for it := d.First(); it != nil; it = it.Next() {
 		vals += it.Val()
 	}
-	assert.Equal(t, "qux", vals)
+	assert.Equal(t, "barlast", vals)
 
-	d.DelFirst()
+	d.DelElement(barEl)
+	vals = ""
+	for it := d.First(); it != nil; it = it.Next() {
+		vals += it.Val()
+	}
+	assert.Equal(t, "last", vals)
+
+	d.DelElement(lastEl)
 	vals = ""
 	for it := d.First(); it != nil; it = it.Next() {
 		vals += it.Val()
@@ -76,5 +84,25 @@ func BenchmarkUint64StringDuplistInsert(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		dup.Insert(8888, "abc")
+	}
+}
+
+func BenchmarkUint64StringDuplistDelete(b *testing.B) {
+
+	N := 1000 * 10
+	dup := NewUint64String(24)
+	var ptr *Uint64StringElement
+	for i := 0; i < N; i++ {
+		if i == 8888 {
+			ptr = dup.Insert(uint64(i), "abc")
+		} else {
+			dup.Insert(uint64(i), "abc")
+		}
+		dup.Insert(uint64(i), "abc")
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		dup.DelElement(ptr)
 	}
 }

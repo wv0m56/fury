@@ -5,19 +5,19 @@ import (
 	"time"
 )
 
-type randomHeight struct {
+type randomHeightGenerator struct {
 	maxHeight int
 	src       rand.Source
 }
 
-func newRandomHeight(maxHeight int, src rand.Source) *randomHeight {
-	rh := &randomHeight{maxHeight, nil}
+func newRandomHeightGenerator(maxHeight int, src rand.Source) *randomHeightGenerator {
+	rh := &randomHeightGenerator{maxHeight, nil}
 	rh.setRandSource(src)
 	return rh
 }
 
 // true=heads, false=tails
-func (rh *randomHeight) flipCoin() bool {
+func (rh *randomHeightGenerator) flipCoin() bool {
 	if rh.src.Int63()%2 == 0 {
 		return true
 	}
@@ -28,14 +28,14 @@ func (rh *randomHeight) flipCoin() bool {
 // to determine an element's "height". It is not thread safe and is meant to be
 // called only once before using the package.
 // If src is nil, time.Now().UnixNano() is used to seed.
-func (rh *randomHeight) setRandSource(src rand.Source) {
+func (rh *randomHeightGenerator) setRandSource(src rand.Source) {
 	if src != nil {
 		rh.src = src
 	}
 	rh.src = rand.NewSource(time.Now().UnixNano())
 }
 
-func (rh *randomHeight) height() int {
+func (rh *randomHeightGenerator) height() int {
 	var n int
 	for n = 1; n < rh.maxHeight; n++ {
 		if !rh.flipCoin() {

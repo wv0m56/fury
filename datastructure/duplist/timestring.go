@@ -15,7 +15,7 @@ import (
 // by specifying an element pointer.
 type TimeString struct {
 	front     []*TimeStringElement
-	rh        *randomHeight
+	rhg       *randomHeightGenerator
 	maxHeight int
 }
 
@@ -31,7 +31,7 @@ func (ts *TimeString) Init(maxHeight int) {
 	if maxHeight < 2 || maxHeight >= 64 {
 		panic("maxHeight must be between 2 and 64")
 	}
-	ts.rh = newRandomHeight(maxHeight, nil)
+	ts.rhg = newRandomHeightGenerator(maxHeight, nil)
 }
 
 func (ts *TimeString) First() *TimeStringElement {
@@ -85,7 +85,7 @@ func (ts *TimeString) del(left []*TimeStringElement, el *TimeStringElement) {
 
 func (ts *TimeString) Insert(key time.Time, val string) *TimeStringElement {
 
-	el := newTimeStringElement(key, val, ts.rh)
+	el := newTimeStringElement(key, val, ts.rhg)
 
 	if ts.front[0] == nil {
 
