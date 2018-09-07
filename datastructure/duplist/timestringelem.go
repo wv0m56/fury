@@ -5,6 +5,7 @@ import "time"
 type TimeStringElement struct {
 	key   time.Time
 	val   string
+	prevs []*TimeStringElement
 	nexts []*TimeStringElement
 }
 
@@ -21,5 +22,10 @@ func (el *TimeStringElement) Next() *TimeStringElement {
 }
 
 func newTimeStringElement(key time.Time, val string, rh *randomHeightGenerator) *TimeStringElement {
-	return &TimeStringElement{key, val, make([]*TimeStringElement, rh.height())}
+	height := rh.height()
+	return &TimeStringElement{
+		key, val,
+		make([]*TimeStringElement, height),
+		make([]*TimeStringElement, height),
+	}
 }

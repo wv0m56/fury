@@ -13,13 +13,14 @@ func TestTimeStringDuplist(t *testing.T) {
 	assert.Nil(t, d.First())
 
 	now := time.Now()
-	el := d.Insert(now.Add(50*time.Millisecond), "foo")
-	d.Insert(now.Add(50*time.Millisecond), "bar")
-	d.Insert(now.Add(50*time.Millisecond), "baz")
-	d.Insert(now.Add(70*time.Millisecond), "qux")
+	fooEl := d.Insert(now.Add(50*time.Millisecond), "foo")
+	barEl := d.Insert(now.Add(50*time.Millisecond), "bar")
+	bazEl := d.Insert(now.Add(50*time.Millisecond), "baz")
+	quxEl := d.Insert(now.Add(70*time.Millisecond), "qux")
 	d.Insert(now.Add(30*time.Millisecond), "first")
-	assert.NotNil(t, el)
-	assert.Equal(t, "foo", el.Val())
+	lastEl := d.Insert(now.Add(99*time.Millisecond), "last")
+	assert.NotNil(t, fooEl)
+	assert.Equal(t, "foo", fooEl.Val())
 
 	first := d.First()
 	assert.Equal(t, now.Add(30*time.Millisecond), first.Key())
@@ -29,37 +30,44 @@ func TestTimeStringDuplist(t *testing.T) {
 	for it := d.First(); it != nil; it = it.Next() {
 		vals += it.Val()
 	}
-	assert.Equal(t, "firstbazbarfooqux", vals)
+	assert.Equal(t, "firstbazbarfooquxlast", vals)
 
-	d.DelFirst()
+	d.DelElement(fooEl)
 	vals = ""
 	for it := d.First(); it != nil; it = it.Next() {
 		vals += it.Val()
 	}
-	assert.Equal(t, "bazbarfooqux", vals)
+	assert.Equal(t, "firstbazbarquxlast", vals)
 
-	d.DelElement(el)
+	d.DelElement(bazEl)
 	vals = ""
 	for it := d.First(); it != nil; it = it.Next() {
 		vals += it.Val()
 	}
-	assert.Equal(t, "bazbarqux", vals)
+	assert.Equal(t, "firstbarquxlast", vals)
 
-	d.DelFirst()
+	d.DelElement(quxEl)
 	vals = ""
 	for it := d.First(); it != nil; it = it.Next() {
 		vals += it.Val()
 	}
-	assert.Equal(t, "barqux", vals)
+	assert.Equal(t, "firstbarlast", vals)
 
-	d.DelFirst()
+	d.DelElement(first)
 	vals = ""
 	for it := d.First(); it != nil; it = it.Next() {
 		vals += it.Val()
 	}
-	assert.Equal(t, "qux", vals)
+	assert.Equal(t, "barlast", vals)
 
-	d.DelFirst()
+	d.DelElement(barEl)
+	vals = ""
+	for it := d.First(); it != nil; it = it.Next() {
+		vals += it.Val()
+	}
+	assert.Equal(t, "last", vals)
+
+	d.DelElement(lastEl)
 	vals = ""
 	for it := d.First(); it != nil; it = it.Next() {
 		vals += it.Val()

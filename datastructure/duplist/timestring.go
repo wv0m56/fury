@@ -42,44 +42,18 @@ func (ts *TimeString) DelElement(el *TimeStringElement) {
 	if el == nil {
 		return
 	}
-	left, it := ts.iterSearch(el)
-	if it == el {
-		ts.del(left, it)
-	}
-}
 
-func (ts *TimeString) iterSearch(el *TimeStringElement) (
-	left []*TimeStringElement,
-	iter *TimeStringElement,
-) {
-
-	left = make([]*TimeStringElement, ts.maxHeight)
-
-	for h := ts.maxHeight - 1; h >= 0; h-- {
-
-		if h == ts.maxHeight-1 || left[h+1] == nil {
-			iter = ts.front[h]
-		} else {
-			left[h] = left[h+1]
-			iter = left[h].nexts[h]
-		}
-
-		for {
-			if iter == nil || iter == el || el.key.Before(iter.key) {
-				break
-			} else {
-				left[h] = iter
-				iter = iter.nexts[h]
-			}
-		}
-	}
-
-	return
-}
-
-func (ts *TimeString) del(left []*TimeStringElement, el *TimeStringElement) {
 	for i := 0; i < len(el.nexts); i++ {
-		ts.reassignLeftAtIndex(i, left, el.nexts[i])
+
+		if el.prevs[i] == nil {
+			ts.front[i] = el.nexts[i]
+		} else {
+			el.prevs[i].nexts[i] = el.nexts[i]
+		}
+
+		if el.nexts[i] != nil {
+			el.nexts[i].prevs[i] = el.prevs[i]
+		}
 	}
 }
 
@@ -88,39 +62,40 @@ func (ts *TimeString) Insert(key time.Time, val string) *TimeStringElement {
 	el := newTimeStringElement(key, val, ts.rhg)
 
 	if ts.front[0] == nil {
-
 		ts.insert(ts.front, el, nil)
-
 	} else {
-
 		ts.searchAndInsert(el)
 	}
 	return el
 }
 
 func (ts *TimeString) searchAndInsert(el *TimeStringElement) {
-	left, iter := ts.search(el.key)
-	ts.insert(left, el, iter)
+	leftAll, iter := ts.search(el.key)
+	ts.insert(leftAll, el, iter)
 }
 
-func (ts *TimeString) search(key time.Time) (left []*TimeStringElement, iter *TimeStringElement) {
-	left = make([]*TimeStringElement, ts.maxHeight)
+func (ts *TimeString) search(key time.Time) (
+	leftAll []*TimeStringElement,
+	right *TimeStringElement, // iterator and result
+) {
+
+	leftAll = make([]*TimeStringElement, ts.maxHeight)
 
 	for h := ts.maxHeight - 1; h >= 0; h-- {
 
-		if h == ts.maxHeight-1 || left[h+1] == nil {
-			iter = ts.front[h]
+		if h == ts.maxHeight-1 || leftAll[h+1] == nil {
+			right = ts.front[h]
 		} else {
-			left[h] = left[h+1]
-			iter = left[h].nexts[h]
+			leftAll[h] = leftAll[h+1]
+			right = leftAll[h].nexts[h]
 		}
 
 		for {
-			if iter == nil || key.Before(iter.key) || key.Equal(iter.key) { // slow comparison
+			if right == nil || key.Before(right.key) || key.Equal(right.key) { // slow comparison
 				break
 			} else {
-				left[h] = iter
-				iter = iter.nexts[h]
+				leftAll[h] = right
+				right = right.nexts[h]
 			}
 		}
 	}
@@ -128,43 +103,50 @@ func (ts *TimeString) search(key time.Time) (left []*TimeStringElement, iter *Ti
 	return
 }
 
-func (ts *TimeString) insert(left []*TimeStringElement, el, right *TimeStringElement) {
+func (ts *TimeString) insert(leftAll []*TimeStringElement, el, right *TimeStringElement) {
+
 	for i := 0; i < len(el.nexts); i++ {
+		el.prevs[i] = leftAll[i]
+
+		if right != nil && i < len(el.nexts) {
+
+			if i < len(right.nexts) {
+				right.prevs[i] = el
+
+			} else {
+
+				if leftAll[i] != nil {
+					if leftAll[i].nexts[i] != nil {
+						leftAll[i].nexts[i].prevs[i] = el
+					}
+
+				} else {
+					if ts.front[i] != nil {
+						ts.front[i].prevs[i] = el
+					}
+				}
+			}
+		}
+
 		if right != nil && i < len(right.nexts) {
 
 			el.nexts[i] = right
 
 		} else {
 
-			ts.takeNextsFromLeftAtIndex(i, left, el)
+			// intercept leftAll[i].nexts[i]
+			if leftAll[i] != nil {
+				el.nexts[i] = leftAll[i].nexts[i]
+			} else {
+				el.nexts[i] = ts.front[i]
+			}
 		}
 
-		ts.reassignLeftAtIndex(i, left, el)
-	}
-}
-
-func (ts *TimeString) takeNextsFromLeftAtIndex(i int, left []*TimeStringElement, el *TimeStringElement) {
-	if left[i] != nil {
-		el.nexts[i] = left[i].nexts[i]
-	} else {
-		el.nexts[i] = ts.front[i]
-	}
-}
-
-func (ts *TimeString) reassignLeftAtIndex(i int, left []*TimeStringElement, el *TimeStringElement) {
-	if left[i] == nil {
-		ts.front[i] = el
-	} else {
-		left[i].nexts[i] = el
-	}
-}
-
-func (ts *TimeString) DelFirst() {
-
-	for i := 0; i < ts.maxHeight; i++ {
-		if ts.front[i] == nil || ts.front[i] != ts.front[0] {
-			continue
+		// reassign what leftAll[i].nexts[i] points to
+		if leftAll[i] == nil {
+			ts.front[i] = el
+		} else {
+			leftAll[i].nexts[i] = el
 		}
-		ts.front[i] = ts.front[i].nexts[i]
 	}
 }

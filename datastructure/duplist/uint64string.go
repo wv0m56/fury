@@ -1,8 +1,7 @@
 package duplist
 
 // Uint64String is repetition....cuz generics.
-// Uint64String is required by access stats implementation to pool keys which
-// are no longer relevant.
+// Uint64String is required by access stats implementation.
 type Uint64String struct {
 	front     []*Uint64StringElement
 	rhg       *randomHeightGenerator
