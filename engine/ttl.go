@@ -29,7 +29,7 @@ func (tc *ttlControl) startLoop(step time.Duration) {
 		if somethingExpired {
 			tc.e.rwm.Lock()
 			for f := tc.First(); f != nil && now.After(f.Key()); f = tc.First() {
-				tc.DelFirst()
+				tc.DelElement(f)
 				delete(tc.m, f.Val())
 				if _, ok := tc.e.data[f.Val()]; ok {
 					delete(tc.e.data, f.Val())

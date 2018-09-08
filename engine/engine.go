@@ -181,7 +181,11 @@ func (e *Engine) firstFill(key string) {
 		e.rwm.Lock()
 
 		if rowPayloadSize := rw.b.Len(); e.payloadTotal+int64(rowPayloadSize) > e.maxPayloadTotal {
-			e.evictUntilFree(2 * rowPayloadSize)
+			if twiceSpace := 2 * int64(rowPayloadSize); int64(twiceSpace) > e.maxPayloadTotal {
+				e.evictUntilFree(e.maxPayloadTotal)
+			} else {
+				e.evictUntilFree(twiceSpace)
+			}
 		}
 
 		if exp != nil && exp.After(time.Now()) {
@@ -227,30 +231,29 @@ func (e *Engine) blockUntilFilled(key string) (r *bytes.Reader, err error) {
 }
 
 // still holding top level lock throughout
-func (e *Engine) evictUntilFree(wantedFreeSpace int) {
+func (e *Engine) evictUntilFree(wantedFreeSpace int64) {
+	if wantedFreeSpace > e.maxPayloadTotal {
+		panic("cache-fill candidate is larger than allowed total") // reconsider
+	}
+
 	var enoughFreed bool
 	e.stats.Lock()
 	defer e.stats.Unlock()
 
 	for it := e.stats.irrelevantDuplist.First(); it != nil; it = it.Next() {
 
-		key := it.Val()
-		e.delDataTTLStats(key)
-		if freeSpace := e.maxPayloadTotal - e.payloadTotal; freeSpace > int64(wantedFreeSpace) {
+		e.delDataTTLStats(it.Val())
+		if freeSpace := e.maxPayloadTotal - e.payloadTotal; freeSpace > wantedFreeSpace {
 			enoughFreed = true
 			break
 		}
 	}
 
 	if !enoughFreed {
-		// check LRU
-		for it := e.stats.relevantLL.Front(); it != nil; it = it.Next() {
+		for it := e.stats.relevantDuplist.First(); it != nil; it = it.Next() {
 
-			// TODO:
-			// TODO:
-			// TODO:
-
-			if freeSpace := e.maxPayloadTotal - e.payloadTotal; freeSpace > int64(wantedFreeSpace) {
+			e.delDataTTLStats(it.Val())
+			if freeSpace := e.maxPayloadTotal - e.payloadTotal; freeSpace > wantedFreeSpace {
 				break
 			}
 		}

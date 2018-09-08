@@ -1,8 +1,10 @@
 package engine
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -108,6 +110,58 @@ func TestCachefillTimeout(t *testing.T) {
 	_, err = e2.Get("TestCachefillTimeout2")
 	assert.NotNil(t, err)
 	assert.Equal(t, "context deadline exceeded", err.Error())
+}
+
+func TestSimpleEvictUponFullCache(t *testing.T) {
+
+	opts := OptionsDefault
+	opts.O = &testdummies.ZeroesPayloadOrigin{}
+	opts.MaxPayloadTotalBytes = 10 * 1000 * 1000
+	opts.AccessStatsTickStep = 10 * time.Millisecond
+
+	// large value for -race
+	opts.AccessStatsRelevanceWindow = 1 * time.Second
+
+	e, err := NewEngine(&opts)
+	assert.Nil(t, err)
+
+	e.stats.Lock()
+	assert.Equal(t, 0, len(e.stats.irrelevantMap))
+	e.stats.Unlock()
+
+	for i := 0; i < 1000; i++ {
+		e.Get(strconv.Itoa(i))
+	}
+
+	assert.Equal(t, opts.MaxPayloadTotalBytes, e.payloadTotal)
+
+	e.stats.Lock()
+	assert.Equal(t, 0, len(e.stats.irrelevantMap))
+	e.stats.Unlock()
+
+	e.Get("abc")
+	r, err := e.Get("abc")
+	assert.Nil(t, err)
+	buf := bytes.NewBuffer(nil)
+	_, err = r.WriteTo(buf)
+	assert.Nil(t, err)
+	assert.True(t, bytes.Equal(make([]byte, 10000), buf.Bytes()))
+
+	e.stats.Lock()
+	assert.Equal(t, 0, len(e.stats.irrelevantMap))
+	e.stats.Unlock()
+
+	time.Sleep(opts.AccessStatsRelevanceWindow)
+
+	e.stats.Lock()
+	assert.True(t, len(e.stats.irrelevantMap) > 0)
+	e.stats.Unlock()
+
+	for i := 888888; i < 888888+150; i++ {
+		_, err = e.Get(strconv.Itoa(i))
+		assert.Nil(t, err)
+		time.Sleep(1 * time.Millisecond)
+	}
 }
 
 // Test how much time N concurrent calls to CacheFill spend resolving lock
