@@ -208,3 +208,26 @@ func BenchmarkErrorKey(b *testing.B) {
 		wg.Wait()
 	}
 }
+
+func BenchmarkEviction(b *testing.B) {
+	opts := testOptionsDefault
+	opts.O = &testdummies.CustomLengthOrigin{}
+	opts.MaxPayloadTotalBytes = 4000 * 1000 * 1000 // 4G
+
+	e, err := NewEngine(&opts)
+	if err != nil {
+		panic(err)
+	}
+
+	for i := 0; i < 2*1000-1; i++ { // # of items
+		_, err := e.Get(strconv.Itoa(i) + "/2000000") // 2M
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		e.evictUntilFree(3999 * 1000 * 1000) // 3.999 G
+	}
+}

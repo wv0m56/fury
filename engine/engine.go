@@ -253,6 +253,7 @@ func (e *Engine) evictUntilFree(wantedFreeSpace int64) {
 		for it := e.stats.relevantDuplist.First(); it != nil; it = it.Next() {
 
 			e.delDataTTLStats(it.Val())
+
 			if freeSpace := e.maxPayloadTotal - e.payloadTotal; freeSpace > wantedFreeSpace {
 				break
 			}
