@@ -189,10 +189,10 @@ func (e *Engine) firstFill(key string) {
 		}
 
 		if exp != nil && exp.After(time.Now()) {
-			rw.Commit()
+			rw.commit()
 			e.setExpiry(key, *exp)
 		} else if exp == nil {
-			rw.Commit()
+			rw.commit()
 		}
 
 		e.payloadTotal += int64(rw.b.Len())
@@ -288,6 +288,18 @@ func (rw *rowWriter) Write(p []byte) (n int, err error) {
 }
 
 // no locking.
-func (rw *rowWriter) Commit() {
+func (rw *rowWriter) commit() {
 	rw.e.data[rw.key] = rw.b.Bytes()
+}
+
+// Invalidate deletes keys from the data, TTL, and access stats.
+// Only invoke Invalidate for manual cluster control (e.g. global purge).
+// Normally, control the invalidation process by setting sensible TTL
+// values at origin.
+func (e *Engine) Invalidate(keys ...string) {
+	e.rwm.Lock()
+	for _, v := range keys {
+		e.delDataTTLStats(v)
+	}
+	e.rwm.Unlock()
 }
