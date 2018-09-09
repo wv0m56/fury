@@ -51,3 +51,21 @@ func (e *Engine) setExpiry(key string, expiry time.Time) {
 	insertedTTL := e.ttl.Insert(expiry, key)
 	e.ttl.m[key] = insertedTTL
 }
+
+// GetTTL returns the number of seconds left until expiry for the given keys, in
+// the order in which keys are passed into args.
+// Keys without TTL yields negative values.
+func (e *Engine) GetTTL(keys ...string) []float64 {
+
+	var t []float64
+	now := time.Now()
+	for _, k := range keys {
+		d, ok := e.ttl.m[k]
+		if ok {
+			t = append(t, d.Key().Sub(now).Seconds())
+		} else {
+			t = append(t, -1)
+		}
+	}
+	return t
+}
