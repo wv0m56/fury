@@ -164,6 +164,77 @@ func TestSimpleEvictUponFullCache(t *testing.T) {
 	}
 }
 
+func TestExpiryDeletion(t *testing.T) {
+	opts := testOptionsDefault
+	opts.TTLTickStep = 1 * time.Millisecond
+	opts.AccessStatsTickStep = 1 * time.Millisecond
+	opts.O = &testdummies.ExpiringOrigin{}
+
+	e, err := NewEngine(&opts)
+	assert.Nil(t, err)
+
+	a, err := e.Get("a")
+	assert.Nil(t, err)
+	assert.NotNil(t, a)
+
+	b, err := e.Get("b")
+	assert.Nil(t, err)
+	assert.NotNil(t, b)
+
+	a = e.tryget("a")
+	b = e.tryget("b")
+	assert.NotNil(t, a)
+	assert.NotNil(t, b)
+
+	e.rwm.Lock()
+
+	ttlA, ok := e.ttl.m["a"]
+	assert.True(t, ok)
+	assert.True(t, roughly(
+		float64(time.Now().Add(20*time.Millisecond).UnixNano()),
+		float64(ttlA.Key().UnixNano()),
+	))
+	assert.Equal(t, "a", ttlA.Val())
+
+	time.Sleep(1 * time.Millisecond) // let stats update
+
+	e.stats.Lock()
+	statsA, ok := e.stats.relevantMap["a"]
+	e.stats.Unlock()
+
+	assert.True(t, ok)
+	assert.Equal(t, "a", statsA.llPtr.Key())
+	assert.True(t, roughly(
+		float64(statsA.llPtr.LastAccessed().Add(1*time.Millisecond).UnixNano()),
+		float64(time.Now().UnixNano()),
+	))
+
+	e.setExpiry("a", time.Now().Add(100*time.Hour))
+
+	e.rwm.Unlock()
+
+	time.Sleep(20 * time.Millisecond)
+
+	a = e.tryget("a")
+	b = e.tryget("b")
+	assert.NotNil(t, a)
+	assert.Nil(t, b)
+
+	e.stats.Lock()
+
+	_, ok = e.stats.relevantMap["a"]
+	assert.True(t, ok)
+	_, ok = e.stats.irrelevantMap["a"]
+	assert.False(t, ok)
+
+	_, ok = e.stats.relevantMap["b"]
+	assert.False(t, ok)
+	_, ok = e.stats.irrelevantMap["b"]
+	assert.False(t, ok)
+
+	e.stats.Unlock()
+}
+
 // Test how much time N concurrent calls to CacheFill spend resolving lock
 // contention, given 0 network delay.
 func BenchmarkHotKey(b *testing.B) {

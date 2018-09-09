@@ -56,6 +56,8 @@ func (e *Engine) setExpiry(key string, expiry time.Time) {
 // the order in which keys are passed into args.
 // Keys without TTL yields negative values.
 func (e *Engine) GetTTL(keys ...string) []float64 {
+	e.rwm.RLock()
+	defer e.rwm.RUnlock()
 
 	var t []float64
 	now := time.Now()
