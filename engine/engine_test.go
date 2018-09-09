@@ -212,7 +212,7 @@ func BenchmarkErrorKey(b *testing.B) {
 func BenchmarkEviction(b *testing.B) {
 	opts := testOptionsDefault
 	opts.O = &testdummies.CustomLengthOrigin{}
-	opts.MaxPayloadTotalBytes = 4000 * 1000 * 1000 // 4G
+	opts.MaxPayloadTotalBytes = 100 * 1000 * 1000 // 100M
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -224,7 +224,7 @@ func BenchmarkEviction(b *testing.B) {
 		}
 
 		for i := 0; i < 2*1000-1; i++ { // # of items
-			_, err := e.Get(strconv.Itoa(i) + "/2000000") // 2M
+			_, err := e.Get(strconv.Itoa(i) + "/50000") // 50k
 			if err != nil {
 				panic(err)
 			}
@@ -232,8 +232,6 @@ func BenchmarkEviction(b *testing.B) {
 
 		b.StartTimer()
 
-		e.evictUntilFree(3999 * 1000 * 1000) // 3.999 G
-
-		b.StopTimer()
+		e.evictUntilFree(99 * 1000 * 1000) // 99M
 	}
 }
