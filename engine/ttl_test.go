@@ -27,6 +27,8 @@ func TestTTL(t *testing.T) {
 		e.setExpiry(key, time.Now().Add(ttl))
 	}
 
+	e.rwm.Lock()
+
 	setTTL("c", 19*time.Millisecond)
 	setTTL("f", 25*time.Millisecond)
 	setTTL("z", 11*time.Millisecond)
@@ -36,14 +38,22 @@ func TestTTL(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equal(t, "c", string(b))
 
+	e.rwm.Unlock()
+
 	// confirm element deletion after expiry
 	time.Sleep(20 * time.Millisecond)
+
+	e.rwm.Lock()
 
 	assert.Equal(t, 5, len(e.data))
 	b, ok = e.data["c"]
 	assert.False(t, ok)
 
+	e.rwm.Unlock()
+
 	time.Sleep(6 * time.Millisecond)
+
+	e.rwm.Lock()
 
 	assert.Equal(t, 4, len(e.data))
 	b, ok = e.data["f"]
@@ -59,7 +69,11 @@ func TestTTL(t *testing.T) {
 	assert.True(t, roughly(15.0, secs[1]))
 	assert.Equal(t, -1.0, secs[2])
 
+	e.rwm.Unlock()
+
 	time.Sleep(50 * time.Millisecond)
+
+	e.rwm.Lock()
 
 	secs = e.GetTTL("a", "d", "ff")
 	assert.True(t, roughly(23.95, secs[0]))
@@ -69,6 +83,8 @@ func TestTTL(t *testing.T) {
 	setTTL("a", 700*time.Second)
 	secs = e.GetTTL("a", "d", "ff")
 	assert.True(t, roughly(700, secs[0]))
+
+	e.rwm.Unlock()
 }
 
 func roughly(a, b float64) bool {
