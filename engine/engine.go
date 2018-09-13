@@ -156,51 +156,61 @@ func (e *Engine) cacheFill(key string) (*bytes.Reader, error) {
 }
 
 func (e *Engine) firstFill(key string) {
+	var (
+		err error
+		rw  *rowWriter
+		rc  io.ReadCloser
+		exp *time.Time
+	)
+
+	defer func() {
+		if err != nil {
+
+			if rc != nil {
+				_ = rc.Close()
+			}
+			e.rwm.Lock()
+			e.fillCond[key].err = err
+
+		} else {
+
+			e.rwm.Lock()
+
+			if rowPayloadSize := rw.b.Len(); e.payloadTotal+int64(rowPayloadSize) > e.maxPayloadTotal {
+				if twiceSpace := 2 * int64(rowPayloadSize); int64(twiceSpace) > e.maxPayloadTotal {
+					e.evictUntilFree(e.maxPayloadTotal)
+				} else {
+					e.evictUntilFree(twiceSpace)
+				}
+			}
+
+			if exp != nil && exp.After(time.Now()) {
+				rw.commit()
+				e.setExpiry(key, *exp)
+			} else if exp == nil {
+				rw.commit()
+			}
+
+			e.payloadTotal += int64(rw.b.Len())
+			e.fillCond[key].b = rw.b.Bytes()
+		}
+
+		e.fillCond[key].Broadcast()
+		e.rwm.Unlock()
+	}()
 
 	// fetch from remote and fill up buffer
-	rc, exp := e.o.Fetch(key, e.timeout)
-	rw := &rowWriter{key, nil, e}
+	rc, exp, err = e.o.Fetch(key, e.timeout)
+	if err != nil {
+		return
+	}
+	rw = &rowWriter{key, nil, e}
 
-	var err error
 	if rc != nil {
 		_, err = io.Copy(rw, rc)
 	} else {
 		err = errors.New("nil ReadCloser from Fetch")
 	}
-
-	if err != nil {
-
-		if rc != nil {
-			_ = rc.Close()
-		}
-		e.rwm.Lock()
-		e.fillCond[key].err = err
-
-	} else {
-
-		e.rwm.Lock()
-
-		if rowPayloadSize := rw.b.Len(); e.payloadTotal+int64(rowPayloadSize) > e.maxPayloadTotal {
-			if twiceSpace := 2 * int64(rowPayloadSize); int64(twiceSpace) > e.maxPayloadTotal {
-				e.evictUntilFree(e.maxPayloadTotal)
-			} else {
-				e.evictUntilFree(twiceSpace)
-			}
-		}
-
-		if exp != nil && exp.After(time.Now()) {
-			rw.commit()
-			e.setExpiry(key, *exp)
-		} else if exp == nil {
-			rw.commit()
-		}
-
-		e.payloadTotal += int64(rw.b.Len())
-		e.fillCond[key].b = rw.b.Bytes()
-	}
-
-	e.fillCond[key].Broadcast()
-	e.rwm.Unlock()
 
 	return
 }

@@ -16,7 +16,9 @@ type DelayedOrigin struct{}
 // implementing a no-op Close() method with 100ms delay. If timeout has
 // elapsed and Fetch has not finished fetching data, it terminates and returns
 // (err, nil).
-func (do *DelayedOrigin) Fetch(key string, timeout time.Duration) (io.ReadCloser, *time.Time) {
+func (do *DelayedOrigin) Fetch(key string, timeout time.Duration) (
+	io.ReadCloser, *time.Time, error) {
+
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	return &delayedReadCloser{
 		bytes.NewReader([]byte(key)),
@@ -24,7 +26,7 @@ func (do *DelayedOrigin) Fetch(key string, timeout time.Duration) (io.ReadCloser
 		false,
 		ctx,
 		cancel,
-	}, nil
+	}, nil, nil
 }
 
 type delayedReadCloser struct {

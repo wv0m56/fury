@@ -12,12 +12,14 @@ import (
 // 1000-2000 bytes long payload.
 type RandomOrigin struct{}
 
-func (_ *RandomOrigin) Fetch(_ string, timeout time.Duration) (io.ReadCloser, *time.Time) {
+func (_ *RandomOrigin) Fetch(_ string, timeout time.Duration) (
+	io.ReadCloser, *time.Time, error) {
+
 	expiry := 10*time.Millisecond + time.Duration(rand.Int63n(40*int64(time.Millisecond)))
 	t := time.Now().Add(expiry)
 	b := make([]byte, 1000+rand.Intn(1000))
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	return &randomReadCloser{bytes.NewReader(b), false, ctx, cancel}, &t
+	return &randomReadCloser{bytes.NewReader(b), false, ctx, cancel}, &t, nil
 }
 
 type randomReadCloser struct {

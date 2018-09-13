@@ -9,8 +9,10 @@ import (
 
 type NoDelayOrigin struct{}
 
-func (_ *NoDelayOrigin) Fetch(key string, _ time.Duration) (io.ReadCloser, *time.Time) {
-	return &nodelayReadCloser{bytes.NewReader([]byte(key)), key}, nil
+func (_ *NoDelayOrigin) Fetch(key string, _ time.Duration) (
+	io.ReadCloser, *time.Time, error) {
+
+	return &nodelayReadCloser{bytes.NewReader([]byte(key)), key}, nil, nil
 }
 
 type nodelayReadCloser struct {

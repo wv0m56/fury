@@ -10,8 +10,10 @@ import (
 // all keys.
 type ZeroesPayloadOrigin struct{}
 
-func (_ *ZeroesPayloadOrigin) Fetch(_ string, _ time.Duration) (io.ReadCloser, *time.Time) {
-	return &zeroesPayloadReadCloser{bytes.NewReader(make([]byte, 10000))}, nil
+func (_ *ZeroesPayloadOrigin) Fetch(_ string, _ time.Duration) (
+	io.ReadCloser, *time.Time, error) {
+
+	return &zeroesPayloadReadCloser{bytes.NewReader(make([]byte, 10000))}, nil, nil
 }
 
 type zeroesPayloadReadCloser struct{ *bytes.Reader }

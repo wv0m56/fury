@@ -13,7 +13,8 @@ import (
 // associated with key bla.
 type CustomLengthOrigin struct{}
 
-func (clo *CustomLengthOrigin) Fetch(key string, timeout time.Duration) (io.ReadCloser, *time.Time) {
+func (clo *CustomLengthOrigin) Fetch(key string, timeout time.Duration) (
+	io.ReadCloser, *time.Time, error) {
 
 	split := strings.Split(key, "/")
 	length, err := strconv.Atoi(split[1])
@@ -22,5 +23,5 @@ func (clo *CustomLengthOrigin) Fetch(key string, timeout time.Duration) (io.Read
 	}
 	payload := make([]byte, length)
 
-	return &nodelayReadCloser{bytes.NewReader(payload), key}, nil
+	return &nodelayReadCloser{bytes.NewReader(payload), key}, nil, nil
 }
