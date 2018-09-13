@@ -22,11 +22,3 @@ type Options struct {
 	// It must be greater than 10*1000*1000 bytes.
 	MaxPayloadTotalBytes int64
 }
-
-var OptionsDefault = Options{
-	ExpectedLen:                10 * 1000 * 1000,
-	AccessStatsRelevanceWindow: 24 * 3600 * time.Second,
-	AccessStatsTickStep:        1 * time.Second,
-	TTLTickStep:                250 * time.Millisecond,
-	CacheFillTimeout:           250 * time.Millisecond,
-}

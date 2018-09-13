@@ -16,7 +16,13 @@ import (
 var testOptionsDefault Options
 
 func init() {
-	testOptionsDefault = OptionsDefault
+	testOptionsDefault = Options{
+		ExpectedLen:                10 * 1000 * 1000,
+		AccessStatsRelevanceWindow: 24 * 3600 * time.Second,
+		AccessStatsTickStep:        1 * time.Second,
+		TTLTickStep:                250 * time.Millisecond,
+		CacheFillTimeout:           250 * time.Millisecond,
+	}
 	testOptionsDefault.MaxPayloadTotalBytes = 4 * 1000 * 1000 * 1000
 	testOptionsDefault.O = &testdummies.DelayedOrigin{}
 }
@@ -114,7 +120,7 @@ func TestCachefillTimeout(t *testing.T) {
 
 func TestSimpleEvictUponFullCache(t *testing.T) {
 
-	opts := OptionsDefault
+	opts := testOptionsDefault
 	opts.O = &testdummies.ZeroesPayloadOrigin{}
 	opts.MaxPayloadTotalBytes = 10 * 1000 * 1000
 	opts.AccessStatsTickStep = 10 * time.Millisecond
