@@ -176,23 +176,34 @@ func (e *Engine) firstFill(key string) {
 
 			e.rwm.Lock()
 
-			if rowPayloadSize := rw.b.Len(); e.payloadTotal+int64(rowPayloadSize) > e.maxPayloadTotal {
-				if twiceSpace := 2 * int64(rowPayloadSize); int64(twiceSpace) > e.maxPayloadTotal {
-					e.evictUntilFree(e.maxPayloadTotal)
-				} else {
-					e.evictUntilFree(twiceSpace)
+			if rw.b != nil {
+
+				if rowPayloadSize := rw.b.Len(); rowPayloadSize != 0 &&
+					e.payloadTotal+int64(rowPayloadSize) > e.maxPayloadTotal {
+
+					if twiceSpace := 2 * int64(rowPayloadSize); int64(twiceSpace) > e.maxPayloadTotal {
+						e.evictUntilFree(e.maxPayloadTotal)
+					} else {
+						e.evictUntilFree(twiceSpace)
+					}
 				}
+
+				if exp != nil && exp.After(time.Now()) {
+					rw.commit()
+					e.setExpiry(key, *exp)
+				} else if exp == nil {
+					rw.commit()
+				}
+
+				e.payloadTotal += int64(rw.b.Len())
 			}
 
-			if exp != nil && exp.After(time.Now()) {
-				rw.commit()
-				e.setExpiry(key, *exp)
-			} else if exp == nil {
-				rw.commit()
+			if rw.b != nil && rw.b.Bytes() != nil {
+				e.fillCond[key].b = rw.b.Bytes()
+			} else {
+				e.fillCond[key].b = []byte{} // terminates cond.Wait() loop
 			}
 
-			e.payloadTotal += int64(rw.b.Len())
-			e.fillCond[key].b = rw.b.Bytes()
 		}
 
 		e.fillCond[key].Broadcast()
@@ -299,7 +310,11 @@ func (rw *rowWriter) Write(p []byte) (n int, err error) {
 
 // no locking.
 func (rw *rowWriter) commit() {
-	rw.e.data[rw.key] = rw.b.Bytes()
+	if rw.b != nil {
+		rw.e.data[rw.key] = rw.b.Bytes()
+	} else {
+		rw.e.data[rw.key] = []byte{}
+	}
 }
 
 // Invalidate deletes keys from the data, TTL, and access stats.
